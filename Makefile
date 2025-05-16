@@ -3,17 +3,19 @@
 SRC_DIR			= src
 OBJ_DIR			= obj
 
+#-LIBFT-#
+
+LIBFT			= lib/libft
+LIBFT_A			= $(LIBFT)/libft.a
+
+
 SRCS			= \
 				main.c \
 				parsing.c \
-				socket.c \
-				struct-management.c \
-				utils.c \
+				structure_management.c \
 				signal.c \
-				packet-statistics.c \
-				print_result.c \
-				
-SRC				= $(addprefix src/, $(SRCS))
+
+SRC				= $(addprefix $(SRC_DIR)/, $(SRCS))
 OBJS			= $(SRC:$(SRC_DIR)/%.c=$(OBJ_DIR)/%.o)
 D_OBJS			= mkdir -p $(@D)
 
@@ -21,26 +23,31 @@ D_OBJS			= mkdir -p $(@D)
 
 CC 				= cc
 CFLAGS 			= -Wall -Wextra -Werror -g 
-NAME 			= ft_ping
+NAME 			= ft_traceroute
 RM 				= rm -f
 RMR				= rm -rf
 
 #-RULES-#
 
-all:			$(NAME)
+all: $(LIBFT_A) $(NAME)
+
+$(LIBFT_A):
+				@make -C $(LIBFT)
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
 				$(D_OBJS)
 				$(CC) $(CFLAGS) -c -o $@ $<
 
-$(NAME): 		$(OBJS)
+$(NAME): 		$(OBJS) $(LIBFT_A)
 				@$(CC) $(CFLAGS) $(OBJS) $(LIBFT_A) -o $(NAME) -lm
-				
+
 clean:
 				@$(RMR) $(OBJ_DIR)
+				@make -C $(LIBFT) clean
 
 fclean: 		clean
 				@$(RM) $(NAME)
+				@make -C $(LIBFT) fclean
 
 re:				fclean all
 

@@ -13,9 +13,9 @@
 # include <sys/time.h>
 # include <errno.h>
 # include <signal.h>
-# include <error.h>
 # include <netinet/udp.h>
 # include "lib/libft/src/libft.h"
+
 
 # define SRC_PORT 47528
 # define DEST_PORT 33434
@@ -42,15 +42,20 @@ typedef struct routeurs_infos
 typedef struct command
 {
     bool		    help;   // --help
-    int			    socket;
+    int			    socket_udp;
+	int				socket_icmp;
     struct addrinfo *addr;
     char            *raw_address;
     nodes           *nodes;
+	char			*packet;
 }				cmd;
 
 
 cmd*    parseEntry(char **av);
 void    freeAndExit(cmd *command, int exit_code);
 cmd*    initCommandStruct(void);
+void    createAndSendPacket(cmd *command);
+void 	setSignalAction(void);
+
 
 #endif

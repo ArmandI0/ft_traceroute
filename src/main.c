@@ -1,7 +1,7 @@
 #include "../ft_traceroute.h"
 
-
 volatile sig_atomic_t g_signal_received = 1;
+
 
 int main(int ac, char **av)
 {
@@ -11,8 +11,9 @@ int main(int ac, char **av)
         ft_printf_fd(STDOUT_FILENO, "Error : %s ", "USAGE");
         exit(EXIT_FAILURE);
     }
-    cmd * command = parseEntry(av);
-    void setSignalAction(void);
+    cmd	*command = parseEntry(av);
+
+	setSignalAction();
 
     while(g_signal_received)
     {

@@ -14,6 +14,7 @@ SRCS			= \
 				parsing.c \
 				structure_management.c \
 				signal.c \
+				send_packets.c \
 
 SRC				= $(addprefix $(SRC_DIR)/, $(SRCS))
 OBJS			= $(SRC:$(SRC_DIR)/%.c=$(OBJ_DIR)/%.o)

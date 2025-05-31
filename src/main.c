@@ -14,11 +14,8 @@ int main(int ac, char **av)
     cmd	*command = parseEntry(av);
 
 	setSignalAction();
-
-    while(g_signal_received)
-    {
-        createAndSendPacket(command);
-        sleep(1);
-    }
-    return 0;
+    createSocket(command);
+    traceroute(command);
+    freeAndExit(command, EXIT_SUCCESS);
+    return 0;  
 }

@@ -15,10 +15,11 @@
 # include <signal.h>
 # include <netinet/udp.h>
 # include "lib/libft/src/libft.h"
+# include <netinet/ip.h>
 
-
-# define SRC_PORT 47528
-# define DEST_PORT 33434
+# define SRC_PORT   47528
+# define DEST_PORT  33434
+# define HOPS_MAX   30
 
 extern	volatile sig_atomic_t g_signal_received;
 
@@ -42,8 +43,7 @@ typedef struct routeurs_infos
 typedef struct command
 {
     bool		    help;   // --help
-    int			    socket_udp;
-	int				socket_icmp;
+    int			    socket;
     struct addrinfo *addr;
     char            *raw_address;
     nodes           *nodes;
@@ -54,8 +54,10 @@ typedef struct command
 cmd*    parseEntry(char **av);
 void    freeAndExit(cmd *command, int exit_code);
 cmd*    initCommandStruct(void);
-void    createAndSendPacket(cmd *command);
 void 	setSignalAction(void);
+void    createSocket(cmd *command);
+void    traceroute(cmd *command);
+
 
 
 #endif

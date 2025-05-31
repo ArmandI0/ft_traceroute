@@ -1,5 +1,6 @@
 #include "../ft_traceroute.h"
 
+
 /*
     Input: pointer to the packet, sizeof(packet)
     Return: checksum result
@@ -20,6 +21,7 @@ uint16_t checksum(void *buffer, size_t length) {
 
     return (uint16_t)(~sum);
 }
+
 
 void preparePacket(int ttl, cmd *command)
 {
@@ -46,6 +48,7 @@ void preparePacket(int ttl, cmd *command)
     ip_header->frag_off = 0;
     ip_header->ttl = ttl;
     ip_header->protocol = IPPROTO_UDP;
+    ip_header->daddr = ((struct sockaddr_in *)command->addr->ai_addr)->sin_addr.s_addr;
     ip_header->check = 0;
 
     // Option du UDP header
@@ -76,23 +79,97 @@ int    sendPacket(cmd *command)
         ft_printf_fd(STDERR_FILENO, "sendto : %s\n", strerror(errno));
         freeAndExit(command, EXIT_FAILURE);
     }
-    free(command->packet);
-    command->packet = NULL;
     return status;
 }
 
-void    traceroute(cmd *command)
+
+int     recvPacket(cmd *command, char *result_buffer, char *ip_str)
+{
+    int retval;
+    fd_set rfds;
+    struct timeval tv, start, end;
+
+    FD_ZERO(&rfds);
+    FD_SET(command->recv_socket, &rfds);
+
+    tv.tv_sec = 1;
+    tv.tv_usec = 0;
+
+    if (gettimeofday(&start, NULL) == -1) {
+        perror("gettimeofday start");
+        freeAndExit(command, EXIT_FAILURE);
+    }
+
+    retval = select(command->recv_socket + 1, &rfds, NULL, NULL, &tv);
+    if (retval == -1)
+    {
+        ft_printf_fd(STDERR_FILENO, "select : %s\n", strerror(errno));
+        freeAndExit(command, EXIT_FAILURE);
+    }
+    else if (retval)
+    {
+        char buffer[1024];
+        struct sockaddr_storage sender_addr;
+        socklen_t sender_addr_len = sizeof(sender_addr);
+
+        ssize_t bytes_received = recvfrom(command->recv_socket, buffer, sizeof(buffer), 0, (struct sockaddr *)&sender_addr, &sender_addr_len);
+        if (bytes_received == -1)
+        {
+            ft_printf_fd(STDERR_FILENO, "recvfrom : %s\n", strerror(errno));
+            freeAndExit(command, EXIT_FAILURE);
+        }
+
+        if (gettimeofday(&end, NULL) == -1) {
+            perror("gettimeofday end");
+            freeAndExit(command, EXIT_FAILURE);
+        }
+
+        // Calculer le temps de réponse en millisecondes
+        double elapsed_time = ((double)(end.tv_sec - start.tv_sec) * 1000.0) +
+                              ((double)(end.tv_usec - start.tv_usec) / 1000.0);
+
+        // Construire le résultat dans le buffer
+        char *ip = inet_ntoa(((struct sockaddr_in *)&sender_addr)->sin_addr);
+        snprintf(result_buffer, 64, "%.3f ms", elapsed_time);
+        strncpy(ip_str, ip, INET_ADDRSTRLEN - 1);
+        ip_str[INET_ADDRSTRLEN - 1] = '\0'; 
+
+        return 1; // Paquet reçu
+    }
+    // Timeout, remplir le buffer avec "*"
+    snprintf(result_buffer, 64, "*");
+    return 0; // Pas de paquet reçu
+}
+
+
+void traceroute(cmd *command)
 {
     static int ttl = 1;
 
     while (ttl <= HOPS_MAX && g_signal_received)
     {
-        for (int i = 0; i < 3; i++)
+        ft_printf_fd(STDOUT_FILENO, "%d  ", ttl); // Affiche le numéro du saut (TTL)
+
+        for (int i = 0; i < 3; i++) // Trois tentatives par TTL
         {
             preparePacket(ttl, command);
             sendPacket(command);
-            ft_printf_fd(STDOUT_FILENO, "i = %d\n", i);
-            sleep(1);
+
+            char result_buffer[64] = {0}; // Buffer pour stocker le résultat
+            char ip_str[INET_ADDRSTRLEN] = {0};
+            recvPacket(command, result_buffer, ip_str);
+            (void)ip_str;
+            if (i == 0)
+                ft_printf_fd(STDOUT_FILENO, "%s  ", ip_str);
+            ft_printf_fd(STDOUT_FILENO, "%s  ", result_buffer); // Affiche le résultat
+
+            free(command->packet); // Libère la mémoire du paquet
+            command->packet = NULL;
+
+            usleep(500000); // Pause de 500 ms entre les envois
         }
+
+        ft_printf_fd(STDOUT_FILENO, "\n"); // Nouvelle ligne après chaque TTL
+        ttl++;
     }
 }

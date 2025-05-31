@@ -9,6 +9,7 @@ cmd* initCommandStruct(void)
 		return NULL;
     command->help =false;
     command->socket = -1;
+    command->recv_socket = -1;
     command->addr = NULL;
     command->nodes = NULL;
 

@@ -44,10 +44,12 @@ typedef struct command
 {
     bool		    help;   // --help
     int			    socket;
+    int             recv_socket;
     struct addrinfo *addr;
     char            *raw_address;
     nodes           *nodes;
 	char			*packet;
+    double          *start_time;
 }				cmd;
 
 

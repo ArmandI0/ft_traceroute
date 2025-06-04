@@ -25,53 +25,82 @@ uint16_t checksum(void *buffer, size_t length) {
 
 void preparePacket(int ttl, cmd *command)
 {
-	static int	dest_port = DEST_PORT;
-    int         packet_len = sizeof(struct iphdr) + sizeof(struct udphdr) + 9; // IP Header + [UDP header = 8bytes] [Data = 9 bytes]
-    char        *packet = malloc(packet_len);
+		static int dest_port = DEST_PORT;
+	#ifdef __APPLE__
+		int packet_len = sizeof(struct ip) + sizeof(struct udphdr) + 9;
+	#else
+		int packet_len = sizeof(struct iphdr) + sizeof(struct udphdr) + 9;
+	#endif
 
-    
-    if (packet == NULL)
-    {
-        ft_printf_fd(STDERR_FILENO, "malloc : %s\n", strerror(errno));
-        freeAndExit(command, EXIT_FAILURE);
-    }
-    memset(packet, 0, packet_len);
+		char *packet = malloc(packet_len);
+		if (packet == NULL)
+		{
+			ft_printf_fd(STDERR_FILENO, "malloc : %s\n", strerror(errno));
+			freeAndExit(command, EXIT_FAILURE);
+		}
+		memset(packet, 0, packet_len);
 
-    // Set les options du IP header
-    struct iphdr *ip_header = (struct iphdr*)packet;
+	// IP HEADER
+	#ifdef __APPLE__
+		struct ip *ip_header = (struct ip *)packet;
+		ip_header->ip_v = 4;
+		ip_header->ip_hl = 5;
+		ip_header->ip_tos = 0;
+		ip_header->ip_len = htons(packet_len);
+		ip_header->ip_id = htons(getpid());
+		ip_header->ip_off = 0;
+		ip_header->ip_ttl = ttl;
+		ip_header->ip_p = IPPROTO_UDP;
+		ip_header->ip_dst.s_addr = ((struct sockaddr_in *)command->addr->ai_addr)->sin_addr.s_addr;
+		ip_header->ip_sum = 0;
+	#else
+		struct iphdr *ip_header = (struct iphdr *)packet;
+		ip_header->version = 4;
+		ip_header->ihl = 5;
+		ip_header->tos = 0;
+		ip_header->tot_len = htons(packet_len);
+		ip_header->id = htons(getpid());
+		ip_header->frag_off = 0;
+		ip_header->ttl = ttl;
+		ip_header->protocol = IPPROTO_UDP;
+		ip_header->daddr = ((struct sockaddr_in *)command->addr->ai_addr)->sin_addr.s_addr;
+		ip_header->check = 0;
+	#endif
 
-    ip_header->version = 4;
-    ip_header->ihl = 5;
-    ip_header->tos = 0;
-    ip_header->tot_len = htons(packet_len);
-    ip_header->id = htons(getpid());
-    ip_header->frag_off = 0;
-    ip_header->ttl = ttl;
-    ip_header->protocol = IPPROTO_UDP;
-    ip_header->daddr = ((struct sockaddr_in *)command->addr->ai_addr)->sin_addr.s_addr;
-    ip_header->check = 0;
+		// UDP HEADER
+	#ifdef __APPLE__
+		struct udphdr *udp_header = (struct udphdr *)(packet + sizeof(struct ip));
+	#else
+		struct udphdr *udp_header = (struct udphdr *)(packet + sizeof(struct iphdr));
+	#endif
 
-    // Option du UDP header
-    struct udphdr *udp_header = (struct udphdr*)(packet + sizeof(struct iphdr));
-    int udp_len = sizeof(struct udphdr) + 9;
-    
-    udp_header->uh_sport = htons(SRC_PORT);
-    udp_header->uh_dport = htons(dest_port);
-    udp_header->uh_ulen = htons(udp_len);
-    udp_header->uh_sum = 0;
-	udp_header->uh_sum = checksum(udp_header, sizeof(struct udphdr) + 9);
+		int udp_len = sizeof(struct udphdr) + 9;
+		udp_header->uh_sport = htons(SRC_PORT);
+		udp_header->uh_dport = htons(dest_port);
+		udp_header->uh_ulen = htons(udp_len);
+		udp_header->uh_sum = 0;
+		udp_header->uh_sum = checksum(udp_header, udp_len);
 
-    ip_header->check = checksum(ip_header, sizeof(struct iphdr));
+	#ifdef __APPLE__
+		ip_header->ip_sum = checksum(ip_header, sizeof(struct ip));
+	#else
+		ip_header->check = checksum(ip_header, sizeof(struct iphdr));
+	#endif
 
-	dest_port++;
-    command->packet = packet;
+		dest_port++;
+		command->packet = packet;
 }
 
 
 int    sendPacket(cmd *command)
 {
 	int status = 0;
-    int packet_len = sizeof(struct iphdr) + sizeof(struct udphdr) + 9;
+
+	#ifdef __APPLE__
+		int packet_len = sizeof(struct ip) + sizeof(struct udphdr) + 9;
+	#else
+		int packet_len = sizeof(struct iphdr) + sizeof(struct udphdr) + 9;
+	#endif
 
 	status = sendto(command->socket, command->packet, packet_len, 0, command->addr->ai_addr, command->addr->ai_addrlen);
     if (status == -1)

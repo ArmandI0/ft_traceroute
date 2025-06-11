@@ -8,7 +8,8 @@ int main(int ac, char **av)
     (void)av;
     if (ac < 2)
     {
-        ft_printf_fd(STDOUT_FILENO, "Error : %s ", "USAGE");
+        ft_printf_fd(STDOUT_FILENO, "traceroute: missing host operand\n");
+        ft_printf_fd(STDOUT_FILENO, "Try 'traceroute --help'\n");
         exit(EXIT_FAILURE);
     }
     cmd	*command = parseEntry(av);

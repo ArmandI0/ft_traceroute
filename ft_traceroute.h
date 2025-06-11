@@ -19,35 +19,17 @@
 
 # define SRC_PORT   47528
 # define DEST_PORT  33434
-# define HOPS_MAX   30
+# define HOPS_MAX   64
+# define TIME_TO_WAIT 1
 
 extern	volatile sig_atomic_t g_signal_received;
 
-typedef	struct udp_packet_infos
-{
-	char    *data;
-    char    *source_address;
-    double  *time_of_response;
-
-}   packet;
-
-typedef struct routeurs_infos
-{
-    int ttl;
-
-    
-    struct routeurs_infos   *next;
-    struct routeurs_infos   *prev;
-}   nodes;
-
 typedef struct command
 {
-    bool		    help;   // --help
     int			    socket;
     int             recv_socket;
     struct addrinfo *addr;
-    char            *raw_address;
-    nodes           *nodes;
+    char            raw_address[INET_ADDRSTRLEN];
 	char			*packet;
     double          *start_time;
 }				cmd;

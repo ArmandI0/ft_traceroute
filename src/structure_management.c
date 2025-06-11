@@ -7,11 +7,10 @@ cmd* initCommandStruct(void)
 	command = malloc(sizeof(cmd));
 	if (!command)
 		return NULL;
-    command->help =false;
+    command->packet = NULL;
     command->socket = -1;
     command->recv_socket = -1;
     command->addr = NULL;
-    command->nodes = NULL;
 
     return command;
 }
@@ -25,7 +24,9 @@ void freeAndExit(cmd *command, int exit_code)
             free(command->packet);
         if (command->socket != -1)
             close(command->socket);
+        if (command->recv_socket != -1)
+            close(command->recv_socket);
         free(command);
     }
     exit(exit_code);
-}    
+}

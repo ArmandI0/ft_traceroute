@@ -9,10 +9,12 @@
 void addFlag(char *flag, cmd *command)
 {
 	// -- options
-    if (strcmp(flag, "--help") == 0)
+    if (ft_strcmp(flag, "--help") == 0)
     {
-        command->help = true;
-        return;
+		ft_printf_fd(STDOUT_FILENO, "Usage: traceroute [OPTION...] HOST\n");
+		ft_printf_fd(STDOUT_FILENO, "Print the route packets trace to network host.\n");
+		ft_printf_fd(STDOUT_FILENO, "\n--help                 give this help list\n");
+        freeAndExit(command, EXIT_SUCCESS);
     }
 }
 
@@ -29,17 +31,18 @@ void	addAddr(char *addr, cmd *command)
     struct addrinfo *res;
     
 	//define search param to find adress
-    memset(&hints, 0, sizeof(hints));
+    ft_memset(&hints, 0, sizeof(hints));
     hints.ai_family = AF_INET;
     hints.ai_socktype = SOCK_DGRAM;
     hints.ai_protocol = IPPROTO_UDP;
     int status = getaddrinfo(addr, NULL, &hints, &res);
     if (status != 0) {
-        ft_printf_fd(STDERR_FILENO, "ft_ping: cannot resolve %s\n", addr);
+        ft_printf_fd(STDERR_FILENO, "ft_ping: unknown host %s\n", addr);
 		freeAndExit(command, EXIT_FAILURE);
     }
+	char *ip = inet_ntoa(((struct sockaddr_in *)res->ai_addr)->sin_addr);
+    ft_strlcpy(command->raw_address , ip, INET_ADDRSTRLEN - 1);
 	command->addr = res;
-	command->raw_address = addr;
 }
 
 
@@ -53,8 +56,9 @@ bool	splitArgs(char **av, cmd* command)
 			addAddr(av[i], command);
 		else
 		{
-			ft_printf_fd(STDERR_FILENO, "Only one destination are required\n");
-			return EXIT_FAILURE;
+			freeaddrinfo(command->addr);
+			command->addr = NULL;
+			addAddr(av[i], command);
 		}
 	}
 	return EXIT_SUCCESS;

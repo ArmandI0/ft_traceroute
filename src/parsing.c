@@ -9,13 +9,19 @@
 void addFlag(char *flag, cmd *command)
 {
 	// -- options
-    if (ft_strcmp(flag, "--help") == 0)
+    if (ft_strcmp(flag, "--help") == 0 || ft_strcmp(flag, "-h") == 0)
     {
 		ft_printf_fd(STDOUT_FILENO, "Usage: traceroute [OPTION...] HOST\n");
 		ft_printf_fd(STDOUT_FILENO, "Print the route packets trace to network host.\n");
 		ft_printf_fd(STDOUT_FILENO, "\n--help                 give this help list\n");
         freeAndExit(command, EXIT_SUCCESS);
     }
+	else
+	{
+        ft_printf_fd(STDOUT_FILENO, "traceroute: unrecognized option '%s'\n", flag);
+        ft_printf_fd(STDOUT_FILENO, "Try 'traceroute --help'\n");
+		freeAndExit(command, EXIT_FAILURE);
+	}
 }
 
 

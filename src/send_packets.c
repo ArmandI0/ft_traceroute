@@ -141,8 +141,9 @@ int     recvPacket(cmd *command, char *result_buffer, char *ip_str)
 
 void traceroute(cmd *command)
 {
-    static int ttl = 1;
-    char ip_str[INET_ADDRSTRLEN] = {0};
+    static int  ttl = 1;
+    char        ip_str[INET_ADDRSTRLEN] = {0};
+    int         status = 0;
 
     while (ttl <= HOPS_MAX && g_signal_received)
     {
@@ -151,7 +152,7 @@ void traceroute(cmd *command)
                 command->raw_address,
                 command->raw_address,
                 HOPS_MAX);
-        ft_printf_fd(STDOUT_FILENO, "%d  ", ttl);
+        ft_printf_fd(STDOUT_FILENO, "  %d   ", ttl);
 
         for (int i = 0; i < 3; i++)
         {
@@ -160,8 +161,8 @@ void traceroute(cmd *command)
 
             char result_buffer[64] = {0};
 
-            recvPacket(command, result_buffer, ip_str);
-            if (i == 0)
+            status = recvPacket(command, result_buffer, ip_str);
+            if (i == 0 && status == 1)
                 ft_printf_fd(STDOUT_FILENO, "%s  ", ip_str);
             ft_printf_fd(STDOUT_FILENO, "%s  ", result_buffer);
 

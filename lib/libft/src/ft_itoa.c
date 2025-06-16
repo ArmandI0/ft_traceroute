@@ -31,6 +31,7 @@ static char	*ft_rev_char_tab(char *tab, int size)
 	return (tab);
 }
 
+
 static int	ft_nbsize(int n)
 {
 	int	i;
@@ -54,6 +55,7 @@ static char	*ft_int_min(char *dst)
 	ft_strlcpy(dst, "-2147483648", 12);
 	return (dst);
 }
+
 
 char	*ft_itoa(int n)
 {
@@ -83,3 +85,4 @@ char	*ft_itoa(int n)
 	str[i] = '0' + n;
 	return (ft_rev_char_tab(str, size));
 }
+

@@ -20,7 +20,7 @@
 # define SRC_PORT   47528
 # define DEST_PORT  33434
 # define HOPS_MAX   64
-# define TIME_TO_WAIT 1
+# define TIME_TO_WAIT 3
 
 extern	volatile sig_atomic_t g_signal_received;
 
@@ -32,6 +32,8 @@ typedef struct command
     char            raw_address[INET_ADDRSTRLEN];
 	char			*packet;
     double          *start_time;
+    int             waiting_time;
+    int             hops_max;
 }				cmd;
 
 
@@ -41,7 +43,6 @@ cmd*    initCommandStruct(void);
 void 	setSignalAction(void);
 void    createSocket(cmd *command);
 void    traceroute(cmd *command);
-
 
 
 #endif

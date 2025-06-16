@@ -15,4 +15,6 @@ sudo ./ft_traceroute [--help] <destination>
 
 ```
 --help
+-w              wait NUM seconds for response (default: 3)
+-m                     set maximal hop count (default: 64)
 ```

@@ -6,22 +6,82 @@
 	input	: the string that contain the flag and a pointeur to the struct cmd
 	output	: in case of a parsing error, exit programme and free cmd struct
 */
-void addFlag(char *flag, cmd *command)
+bool addFlag(char *flag, cmd *command, char *next_arg)
 {
+	bool	skip_the_next_args = false;
 	// -- options
     if (ft_strcmp(flag, "--help") == 0 || ft_strcmp(flag, "-h") == 0)
     {
-		ft_printf_fd(STDOUT_FILENO, "Usage: traceroute [OPTION...] HOST\n");
+		ft_printf_fd(STDOUT_FILENO, "Usage: ft_traceroute [OPTION...] HOST\n");
 		ft_printf_fd(STDOUT_FILENO, "Print the route packets trace to network host.\n");
 		ft_printf_fd(STDOUT_FILENO, "\n--help                 give this help list\n");
-        freeAndExit(command, EXIT_SUCCESS);
+		ft_printf_fd(STDOUT_FILENO, "-w                     wait NUM seconds for response (default: 3)\n");
+		ft_printf_fd(STDOUT_FILENO, "-m                     set maximal hop count (default: 64)\n");
+		freeAndExit(command, EXIT_SUCCESS);
+    }
+    else if (flag[0] == '-' && flag[1] == 'w')
+    {
+        char *value = NULL;
+        if (flag[2]) 
+            value = &flag[2];
+        else if (next_arg != NULL)
+        {
+			value = next_arg;
+			skip_the_next_args = true;
+		}
+		else
+		{
+			ft_printf_fd(STDOUT_FILENO, "ft_traceroute: option requires an argument 'w'\n");
+			ft_printf_fd(STDOUT_FILENO, "Try 'ft_traceroute --help'\n");
+			freeAndExit(command, EXIT_FAILURE);
+		}
+		int wait_time = ft_atoi(value);
+		char *tmp = ft_itoa(wait_time);
+
+        if (wait_time <= 0 || ft_strcmp(tmp, value) != 0 || wait_time > 60)
+        {
+			free(tmp);
+            ft_printf_fd(STDOUT_FILENO, "ft_traceroute: ridiculous waiting time '%s'\n", value);
+            freeAndExit(command, EXIT_FAILURE);
+        }
+		free(tmp);
+		command->waiting_time = wait_time;
+    }
+	else if (flag[0] == '-' && flag[1] == 'm')
+    {
+        char *value = NULL;
+        if (flag[2]) 
+            value = &flag[2];
+        else if (next_arg != NULL)
+        {
+			value = next_arg;
+			skip_the_next_args = true;
+		}
+		else
+		{
+			ft_printf_fd(STDOUT_FILENO, "ft_traceroute: option requires an argument 'm'\n");
+			ft_printf_fd(STDOUT_FILENO, "Try 'traceroute --help'\n");
+			freeAndExit(command, EXIT_FAILURE);
+		}
+		int hops_max = ft_atoi(value);
+		char *tmp = ft_itoa(hops_max);
+
+        if (hops_max <= 0 || ft_strcmp(tmp, value) != 0 || hops_max > 255)
+        {
+			free(tmp);
+            ft_printf_fd(STDOUT_FILENO, "ft_traceroute: invalid hops value '%s'\n", value);
+            freeAndExit(command, EXIT_FAILURE);
+        }
+		free(tmp);
+		command->hops_max = hops_max;
     }
 	else
 	{
-        ft_printf_fd(STDOUT_FILENO, "traceroute: unrecognized option '%s'\n", flag);
-        ft_printf_fd(STDOUT_FILENO, "Try 'traceroute --help'\n");
+        ft_printf_fd(STDOUT_FILENO, "ft_traceroute: unrecognized option '%s'\n", flag);
+        ft_printf_fd(STDOUT_FILENO, "Try 'ft_traceroute --help'\n");
 		freeAndExit(command, EXIT_FAILURE);
 	}
+	return skip_the_next_args;
 }
 
 
@@ -56,8 +116,9 @@ bool	splitArgs(char **av, cmd* command)
 {
 	for (size_t i = 1; av[i] != NULL; i++)
 	{
-		if (av[i][0] == '-')
-			addFlag(av[i], command);
+		bool	skip_next_arg = false;
+		if (av[i][0] == '-' && av[i][1] != '\0')
+			skip_next_arg =  addFlag(av[i], command, av[i + 1]);
 		else if (command->addr == NULL)
 			addAddr(av[i], command);
 		else
@@ -66,6 +127,14 @@ bool	splitArgs(char **av, cmd* command)
 			command->addr = NULL;
 			addAddr(av[i], command);
 		}
+		if (skip_next_arg == true)
+			i++;
+	}
+	if (command->addr == NULL)
+	{
+		ft_printf_fd(STDOUT_FILENO, "traceroute: missing host operand\n");
+        ft_printf_fd(STDOUT_FILENO, "Try 'traceroute --help'\n");
+		freeAndExit(command, EXIT_FAILURE);
 	}
 	return EXIT_SUCCESS;
 }

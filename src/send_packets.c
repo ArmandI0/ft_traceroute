@@ -86,14 +86,17 @@ int    sendPacket(cmd *command)
 
 int     recvPacket(cmd *command, char *result_buffer, char *ip_str)
 {
-    int retval;
+    int status;
     fd_set rfds;
     struct timeval tv, start, end;
+    int time_to_wait = TIME_TO_WAIT;
+    if (command->waiting_time != -1)
+        time_to_wait = command->waiting_time;
 
     FD_ZERO(&rfds);
     FD_SET(command->recv_socket, &rfds);
 
-    tv.tv_sec = TIME_TO_WAIT;
+    tv.tv_sec = time_to_wait;
     tv.tv_usec = 0;
 
     if (gettimeofday(&start, NULL) == -1) {
@@ -101,13 +104,13 @@ int     recvPacket(cmd *command, char *result_buffer, char *ip_str)
         freeAndExit(command, EXIT_FAILURE);
     }
 
-    retval = select(command->recv_socket + 1, &rfds, NULL, NULL, &tv);
-    if (retval == -1)
+    status = select(command->recv_socket + 1, &rfds, NULL, NULL, &tv);
+    if (status == -1)
     {
         ft_printf_fd(STDERR_FILENO, "select : %s\n", strerror(errno));
         freeAndExit(command, EXIT_FAILURE);
     }
-    else if (retval)
+    else if (status)
     {
         char buffer[1024];
         struct sockaddr_storage sender_addr;
@@ -144,14 +147,17 @@ void traceroute(cmd *command)
     static int  ttl = 1;
     char        ip_str[INET_ADDRSTRLEN] = {0};
     int         status = 0;
+    int         hops_max = HOPS_MAX;
+    if (command->hops_max != -1)
+        hops_max = command->hops_max;
 
-    while (ttl <= HOPS_MAX && g_signal_received)
+    while (ttl <= hops_max && g_signal_received)
     {
         if (ttl == 1)
             ft_printf_fd(STDOUT_FILENO, "ft_traceroute to %s (%s), %d hops max\n",
                 command->raw_address,
                 command->raw_address,
-                HOPS_MAX);
+                hops_max);
         ft_printf_fd(STDOUT_FILENO, "  %d   ", ttl);
 
         for (int i = 0; i < 3; i++)
@@ -175,3 +181,4 @@ void traceroute(cmd *command)
         ttl++;
     }
 }
+

@@ -11,9 +11,12 @@ cmd* initCommandStruct(void)
     command->socket = -1;
     command->recv_socket = -1;
     command->addr = NULL;
+    command->waiting_time = -1;
+    command->hops_max = -1;
 
     return command;
 }
+
 
 void freeAndExit(cmd *command, int exit_code)
 {
@@ -30,3 +33,4 @@ void freeAndExit(cmd *command, int exit_code)
     }
     exit(exit_code);
 }
+

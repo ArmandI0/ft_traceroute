@@ -20,3 +20,4 @@ int main(int ac, char **av)
     freeAndExit(command, EXIT_SUCCESS);
     return 0;  
 }
+
